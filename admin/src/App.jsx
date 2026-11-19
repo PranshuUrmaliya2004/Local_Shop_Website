@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Boxes,
@@ -35,6 +35,7 @@ export default function App() {
   const [stats, setStats] = useState({ productCount: 0, orderCount: 0, revenue: 0, customerCount: 0 });
   const [form, setForm] = useState({ name: "", category: "Grocery", price: "", stock: "", imageUrl: "", available: true });
   const [editingId, setEditingId] = useState("");
+  const productEditorRef = useRef(null);
 
   const authHeaders = useMemo(() => (
     token ? { Authorization: `Bearer ${token}` } : {}
@@ -163,6 +164,7 @@ export default function App() {
       imageUrl: product.imageUrl || "",
       available: product.available,
     });
+    productEditorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   if (!token) {
@@ -237,7 +239,7 @@ export default function App() {
         )}
 
         {activeView === "products" && (
-          <section className="admin-card">
+          <section className="admin-card" ref={productEditorRef}>
             <div className="admin-section-heading"><div><span className="eyebrow">CATALOGUE</span><h2>{editingId ? "Edit product" : "Add a product"}</h2></div></div>
             <form className="product-form" onSubmit={saveProduct}>
               <label>Name<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required /></label>

@@ -13,6 +13,7 @@ import {
 import { shopConfig } from "../../client/src/config/shopConfig.js";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
+const DEFAULT_CATEGORIES = ["Grocery", "Fresh Products", "Home", "Personal Care", "Snacks"];
 
 function formatPrice(amount) {
   return new Intl.NumberFormat(shopConfig.locale, {
@@ -190,7 +191,7 @@ export default function App() {
     );
   }
 
-  const categories = [...new Set(["Grocery", ...products.map((product) => product.category)])].sort();
+  const categories = [...new Set([...DEFAULT_CATEGORIES, ...products.map((product) => product.category)])].sort();
 
   return (
     <main className="admin-shell">

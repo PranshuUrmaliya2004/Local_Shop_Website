@@ -1,7 +1,7 @@
 import "dotenv/config";
 import cors from "cors";
 import express from "express";
-import mongoose from "mongoose";
+import { connectDatabase } from "./config/database.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
@@ -43,6 +43,9 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "20kb" }));
 
+app.get("/", (_request, response) => {
+  response.json({ status: "ok", message: "Shop API is running." });
+});
 app.get("/api/health", (_request, response) => {
   response.json({ status: "ok" });
 });
@@ -63,7 +66,7 @@ app.use((error, _request, response, _next) => {
 });
 
 async function startServer() {
-  await mongoose.connect(process.env.MONGODB_URI);
+  await connectDatabase();
   app.listen(port, () => {
     console.log(`Shop API listening on port ${port}`);
   });

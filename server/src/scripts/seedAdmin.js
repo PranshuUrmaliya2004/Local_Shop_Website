@@ -1,6 +1,6 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
-import mongoose from "mongoose";
+import { connectDatabase, disconnectDatabase } from "../config/database.js";
 import Admin from "../models/Admin.js";
 
 const { MONGODB_URI, ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
@@ -13,7 +13,7 @@ if (ADMIN_PASSWORD.length < 12) {
 }
 
 try {
-  await mongoose.connect(MONGODB_URI);
+  await connectDatabase();
   const email = ADMIN_EMAIL.trim().toLowerCase();
   const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 12);
   await Admin.findOneAndUpdate(
@@ -26,5 +26,5 @@ try {
   console.error("Could not create the admin account:", error.message);
   process.exitCode = 1;
 } finally {
-  await mongoose.disconnect();
+  await disconnectDatabase();
 }

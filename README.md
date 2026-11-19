@@ -26,6 +26,11 @@ for the storefront, `client/src/config/shopConfig.js` for shop branding, and
 2. Copy `server/.env.example` to `server/.env` and set `MONGODB_URI`,
    `JWT_SECRET` (at least 32 random characters), `ADMIN_EMAIL`, and
    `ADMIN_PASSWORD` (at least 12 characters).
+   To use MongoDB Atlas, copy the Node.js connection URI from Atlas **Connect >
+   Drivers**, replace the database-user/password/cluster placeholders, and put
+   it in `server/.env` as `MONGODB_URI`. In Atlas, create a database user and
+   allow your current IP in **Network Access**. URL-encode special characters in
+   the database user's password. Never commit or share `server/.env`.
 3. Create the initial admin account:
 
    ```sh
@@ -52,10 +57,27 @@ for the storefront, `client/src/config/shopConfig.js` for shop branding, and
    at `http://localhost:5174` (start it with `npm run admin`).
 
 The client and admin Vite servers proxy `/api` requests to Express at port 5000.
-For deployment, set `VITE_API_URL` to the backend's public origin when building
-both frontends, and set `CLIENT_ORIGIN` on the backend to the comma-separated
-deployed origins for the storefront and admin app. During development, both
-localhost origins are allowed automatically.
+For Vercel, deploy `server/` as a separate project named `localshopwebsite-api`
+and set its Root Directory to `server`. Add `MONGODB_URI`, `JWT_SECRET`
+(at least 32 characters), and `CLIENT_ORIGIN` (the deployed storefront origin,
+plus the admin origin if it is separately hosted) to the backend project's
+Environment Variables, then deploy it.
+
+Copy the backend's deployed origin into `VITE_API_URL` in the storefront
+project's Environment Variables and redeploy the storefront. Set the same
+variable for the admin project if it is deployed separately. Use the backend
+origin only (no `/api` suffix or trailing slash). Never commit or share the
+database URI or JWT secret. During development, both localhost origins are
+allowed automatically.
+
+For the currently deployed sites, set `CLIENT_ORIGIN` in the backend project to
+`https://local-shop-website-one.vercel.app` and `VITE_API_URL` in the storefront
+project to `https://local-shop-website-dusky.vercel.app`. Add the admin site's
+origin to `CLIENT_ORIGIN` as a comma-separated value if it is hosted separately.
+
+For a map of the backend modules, API routes, database models, and main customer
+flows, see [the backend feature guide](./server/FEATURES.md). MongoDB connection
+and disconnection are centralized in `server/src/config/database.js`.
 
 ## Customize for a shop
 

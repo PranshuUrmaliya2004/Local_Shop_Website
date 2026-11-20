@@ -4,7 +4,7 @@ const customerSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 100 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    phone: { type: String, trim: true, maxlength: 20, default: "" },
+    phone: { type: String, required: true, trim: true, maxlength: 20 },
     passwordHash: { type: String, required: true },
     favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product", default: [] }],
   },

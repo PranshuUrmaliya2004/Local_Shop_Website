@@ -1,9 +1,9 @@
 # General Shop Website Template
 
 A small, reusable MERN starter for a local shop. The customer-facing site reads
-products from MongoDB and prepares an order message for WhatsApp. The customer
-must send that message themselves; the shop confirms stock, delivery, and final
-price.
+products from MongoDB and supports cash-on-delivery orders or WhatsApp order
+confirmation. WhatsApp opens a draft that customers send themselves; the shop
+confirms stock, delivery, and final price.
 
 The code is intentionally split into small files. Start with `client/src/App.jsx`
 for the storefront, `client/src/config/shopConfig.js` for shop branding, and
@@ -13,7 +13,7 @@ for the storefront, `client/src/config/shopConfig.js` for shop branding, and
 
 - Node.js 20 or newer
 - MongoDB (local or MongoDB Atlas)
-- A WhatsApp number that can receive customer orders
+- A WhatsApp number that can receive customer orders if WhatsApp confirmation is enabled
 
 ## Run locally
 
@@ -92,13 +92,18 @@ the React app.
 
 ## Important behavior and security notes
 
-- WhatsApp opens a prefilled message; it does not send an order automatically.
+- Visitors can browse products without an account. Sign in or create an account
+  when adding products to the basket, saving favorites, or placing an order.
+  New accounts require a name, email, phone number, and password.
+- Checkout offers WhatsApp confirmation and cash on delivery. WhatsApp opens a
+  prefilled message; it does not send the message automatically. COD orders are
+  saved as pending until the shop confirms them.
 - Product prices shown in the message are a customer-facing estimate. Confirm
   stock, delivery charges, and final price before accepting an order.
-  - Admins can permanently delete individual orders from order history after a
-    confirmation prompt; deletion removes the history record and does not restore
-    product stock.
-  - Keep `.env` private. Use a long, unique `JWT_SECRET` and strong admin password.
+- Admins can permanently delete individual orders from order history after a
+  confirmation prompt; deletion removes the history record and does not restore
+  product stock.
+- Keep `.env` private. Use a long, unique `JWT_SECRET` and strong admin password.
 - The starter has one admin account per database. It is designed for separate
   shop deployments, not for hosting many shops in one shared database.
 - This is a learning-friendly starting point, not a complete production

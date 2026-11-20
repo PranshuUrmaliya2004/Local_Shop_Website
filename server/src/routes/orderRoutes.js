@@ -1,5 +1,4 @@
 import { Router } from "express";
-import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
@@ -8,14 +7,18 @@ import requireCustomer from "../middleware/requireCustomer.js";
 
 const router = Router();
 
-router.post("/", async (request, response, next) => {
+router.post("/", requireCustomer, async (request, response, next) => {
   try {
     const customerName = typeof request.body.customerName === "string" ? request.body.customerName.trim() : "";
     const phone = typeof request.body.phone === "string" ? request.body.phone.trim() : "";
     const address = typeof request.body.address === "string" ? request.body.address.trim() : "";
     const pincode = typeof request.body.pincode === "string" ? request.body.pincode.trim() : "";
+    const paymentMethod = request.body.paymentMethod === undefined ? "whatsapp" : request.body.paymentMethod;
     const items = Array.isArray(request.body.items) ? request.body.items : [];
-    if (!customerName || !phone || !address || !/^[0-9]{6}$/.test(pincode) || items.length === 0) {
+    if (paymentMethod !== "whatsapp" && paymentMethod !== "cod") {
+      return response.status(400).json({ message: "Payment method must be WhatsApp confirmation or cash on delivery." });
+    }
+    if (!customerName || !phone || phone.length > 20 || !address || !/^[0-9]{6}$/.test(pincode) || items.length === 0) {
       return response.status(400).json({ message: "Customer name, phone, delivery address, 6-digit pincode and at least one item are required." });
     }
 
@@ -33,18 +36,6 @@ router.post("/", async (request, response, next) => {
       total += product.price * quantity;
     }
 
-    const customerId = request.headers.authorization
-      ? (() => {
-          try {
-            const token = request.headers.authorization.split(" ")[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            return decoded.role === "customer" ? decoded.customerId : null;
-          } catch {
-            return null;
-          }
-        })()
-      : null;
-
     for (const item of orderItems) {
       const updated = await Product.findOneAndUpdate(
         { _id: item.product, available: true, stock: { $gte: item.quantity } },
@@ -56,7 +47,16 @@ router.post("/", async (request, response, next) => {
       }
     }
 
-    const order = await Order.create({ customer: customerId, customerName, phone, address, pincode, items: orderItems, total });
+    const order = await Order.create({
+      customer: request.customer.customerId,
+      customerName,
+      phone,
+      address,
+      pincode,
+      paymentMethod,
+      items: orderItems,
+      total,
+    });
     return response.status(201).json(order);
   } catch (error) {
     return next(error);

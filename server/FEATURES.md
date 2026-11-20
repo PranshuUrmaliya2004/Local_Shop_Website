@@ -22,12 +22,13 @@ number, currency, and branding settings are in
 
 - **Product** (`models/Product.js`): name, category, price, stock, image URL, and
   availability.
-- **Customer** (`models/Customer.js`): profile, unique email, password hash, and
-  favorite product IDs.
+- **Customer** (`models/Customer.js`): profile with required name, unique email,
+  phone number, password hash, and favorite product IDs.
 - **Order** (`models/Order.js`): customer/contact and delivery details, items,
-  total, status, and timestamps. Each item stores a product reference plus name
-  and price snapshots so the placed order remains understandable if a product
-  is later changed. Guest orders may have no customer reference.
+  total, payment method, status, and timestamps. Each item stores a product
+  reference plus name and price snapshots so the placed order remains
+  understandable if a product is later changed. New orders must belong to a
+  signed-in customer.
 - **Admin** (`models/Admin.js`): unique email and password hash.
 
 The connection URL is supplied by the `MONGODB_URI` environment variable. Keep
@@ -68,7 +69,7 @@ All routes below are mounted under `/api`.
 | `GET /customer/profile` | Customer | Load the signed-in customer profile. |
 | `PUT /customer/profile` | Customer | Update name and phone number. |
 | `PUT /customer/wishlist` | Customer | Save that customer's favorite product IDs. |
-| `POST /orders` | Public; optional customer token | Validate products and quantities, reduce stock, and save the order. |
+| `POST /orders` | Customer | Validate products and quantities, reduce stock, and save the order. |
 | `GET /orders/mine` | Customer | List the signed-in customer's orders. |
 | `GET /orders` | Admin | List all orders. |
 | `PATCH /orders/:id/status` | Admin | Change an order's fulfillment status. |
@@ -82,13 +83,13 @@ use `middleware/requireCustomer.js`. Both require a valid JWT in the
 
 ## Order flow
 
-1. The client submits item IDs, quantities, delivery details, and an optional
-   signed-in customer token.
+1. The signed-in client submits item IDs, quantities, delivery details, and a
+   payment method (`whatsapp` or `cod`) with the customer's bearer token.
 2. The API checks that each product is available and has enough stock, reduces
-   inventory, and saves an order with item snapshots.
-3. The storefront opens WhatsApp with a prefilled message. The customer sends
-   it manually; the shop confirms availability, delivery charges, and final
-   price.
+   inventory, and saves an order with item snapshots and the selected payment
+   method.
+3. WhatsApp orders open a prefilled message that the customer sends manually.
+   COD orders are saved as pending for the shop to confirm.
 4. An admin can review orders and update their status in the seller dashboard.
 
 ## Setup scripts

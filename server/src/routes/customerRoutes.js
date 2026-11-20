@@ -21,8 +21,11 @@ router.post("/register", async (request, response, next) => {
     const email = typeof request.body.email === "string" ? request.body.email.trim().toLowerCase() : "";
     const phone = typeof request.body.phone === "string" ? request.body.phone.trim() : "";
     const password = typeof request.body.password === "string" ? request.body.password : "";
-    if (!name || !email || !password) {
-      return response.status(400).json({ message: "Name, email and password are required." });
+    if (!name || !email || !phone || !password) {
+      return response.status(400).json({ message: "Name, email, phone number and password are required." });
+    }
+    if (phone.length > 20) {
+      return response.status(400).json({ message: "Phone number must be at most 20 characters." });
     }
     if (password.length < 8) {
       return response.status(400).json({ message: "Password must be at least 8 characters." });
@@ -76,6 +79,12 @@ router.put("/profile", requireCustomer, async (request, response, next) => {
     const phone = typeof request.body.phone === "string" ? request.body.phone.trim() : "";
     if (!name) {
       return response.status(400).json({ message: "Name is required." });
+    }
+    if (!phone) {
+      return response.status(400).json({ message: "Phone number is required." });
+    }
+    if (phone.length > 20) {
+      return response.status(400).json({ message: "Phone number must be at most 20 characters." });
     }
     const customer = await Customer.findByIdAndUpdate(
       request.customer.customerId,

@@ -7,7 +7,6 @@ import {
   MessageCircle,
   Heart,
   MapPin,
-  Minus,
   PackageCheck,
   Plus,
   Search,
@@ -35,8 +34,37 @@ import {
   Navigation,
 } from "lucide-react";
 import { shopConfig } from "./config/shopConfig.js";
+import Cart from "./components/Cart.jsx";
 
 const API_URL = import.meta.env.VITE_API_URL || "";
+
+const categoryPresentations = [
+  { name: "grocery", icon: ShoppingBag },
+  { name: "personal-care", icon: Sparkles },
+  { name: "snacks", icon: Star },
+  { name: "home", icon: Store },
+  { name: "fresh", icon: PackageCheck },
+];
+
+function getCategoryPresentation(category, index) {
+  const normalizedCategory = category.toLowerCase();
+  if (/fresh|fruit|vegetable|produce/.test(normalizedCategory)) {
+    return categoryPresentations[4];
+  }
+  if (/personal|care|beauty|health/.test(normalizedCategory)) {
+    return categoryPresentations[1];
+  }
+  if (/snack|bakery|beverage|drink/.test(normalizedCategory)) {
+    return categoryPresentations[2];
+  }
+  if (/home|clean|kitchen/.test(normalizedCategory)) {
+    return categoryPresentations[3];
+  }
+  if (/grocery|food|pantry/.test(normalizedCategory)) {
+    return categoryPresentations[0];
+  }
+  return categoryPresentations[index % categoryPresentations.length];
+}
 
 function formatPrice(amount) {
   return new Intl.NumberFormat(shopConfig.locale, {
@@ -207,13 +235,14 @@ function Header({
         </AnimatePresence>
         </div>
         <div className="header-actions">
-          <button className="header-action theme-toggle" onClick={() => setDarkMode((current) => !current)} aria-label="Toggle color mode">
+          <button className="header-action theme-toggle" data-magnetic onClick={() => setDarkMode((current) => !current)} aria-label="Toggle color mode">
             <span className="action-icon">{darkMode ? <Sun size={20} /> : <Moon size={20} />}</span>
             <span>{darkMode ? "Light" : "Dark"}</span>
           </button>
           <div className="notification-menu-wrap">
             <button
               className="header-action notification-action"
+              data-magnetic
               onClick={() => {
                 setUpdatesOpen((current) => !current);
                 setUnreadUpdates(0);
@@ -234,12 +263,12 @@ function Header({
               )}
             </AnimatePresence>
           </div>
-          <button className="header-action" onClick={onShowFavorites} aria-label={`Show wishlist, ${favoriteCount} items`}>
+          <button className="header-action" data-magnetic onClick={onShowFavorites} aria-label={`Show wishlist, ${favoriteCount} items`}>
             <span className="action-icon"><Heart size={20} />{favoriteCount > 0 && <i>{favoriteCount}</i>}</span>
             <span>Wishlist</span>
           </button>
           <div className="profile-menu-wrap">
-            <button className="header-action" onClick={() => customer ? setProfileOpen((current) => !current) : onOpenAccount()} aria-label={customer ? `Open profile menu for ${customer.name}` : "Sign in"}>
+            <button className="header-action" data-magnetic onClick={() => customer ? setProfileOpen((current) => !current) : onOpenAccount()} aria-label={customer ? `Open profile menu for ${customer.name}` : "Sign in"}>
               <span className="action-icon"><UserCircle size={20} /></span>
               <span>{customer ? customer.name.split(" ")[0] : "Account"}</span>
             </button>
@@ -254,7 +283,7 @@ function Header({
             </AnimatePresence>
           </div>
           <div className="cart-menu-wrap">
-            <button className="header-action cart-action" onClick={onOpenCart} aria-label={`Open cart, ${cartCount} items`}>
+            <button className="header-action cart-action" data-magnetic onClick={onOpenCart} aria-label={`Open cart, ${cartCount} items`}>
               <span className="action-icon"><ShoppingBag size={20} />{cartCount > 0 && <i>{cartCount}</i>}</span>
               <span>Cart</span>
             </button>
@@ -292,7 +321,7 @@ function Header({
 
 function ProductCard({ product, onAdd, isFavorite, onToggleFavorite, onQuickView }) {
   return (
-    <motion.article className="product-card" initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} whileHover={{ y: -7 }}>
+    <motion.article className="product-card" data-glow initial={{ opacity: 0, y: 18 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} whileHover={{ y: -7 }}>
       <div className="product-image" onClick={() => onQuickView(product)}>
         {product.imageUrl ? (
           <img src={product.imageUrl} alt={product.name} loading="lazy" />
@@ -303,6 +332,7 @@ function ProductCard({ product, onAdd, isFavorite, onToggleFavorite, onQuickView
         {product.stock > 0 && product.stock <= 3 && <span className="stock-badge">Only {product.stock} left</span>}
         <button
           className={isFavorite ? "favorite-button is-favorite" : "favorite-button"}
+          data-magnetic
           onClick={(event) => {
             event.stopPropagation();
             onToggleFavorite(product._id);
@@ -311,7 +341,7 @@ function ProductCard({ product, onAdd, isFavorite, onToggleFavorite, onQuickView
         >
           <Heart size={17} fill={isFavorite ? "currentColor" : "none"} />
         </button>
-        <button className="quick-view-button" onClick={() => onQuickView(product)}>Quick view</button>
+        <button className="quick-view-button" data-magnetic onClick={() => onQuickView(product)}>Quick view</button>
       </div>
       <div className="product-details">
         <span className="product-category">{product.category}</span>
@@ -321,6 +351,7 @@ function ProductCard({ product, onAdd, isFavorite, onToggleFavorite, onQuickView
           <strong>{formatPrice(product.price)}</strong>
           <button
             className="add-button"
+            data-magnetic
             onClick={() => onAdd(product)}
             disabled={product.stock === 0}
             aria-label={`Add ${product.name} to cart`}
@@ -351,86 +382,11 @@ function QuickView({ product, onClose, onAdd }) {
           <strong className="quick-price">{formatPrice(product.price)}</strong>
           <p>Available from {shopConfig.name}. Add it to your basket and send your order directly to the shop on WhatsApp.</p>
           <div className="quick-stock"><PackageCheck size={17} /> {product.stock > 0 ? `${product.stock} available` : "Currently unavailable"}</div>
-          <button className="order-button" disabled={product.stock === 0} onClick={() => { onAdd(product); onClose(); }}>
+          <button className="order-button" data-magnetic disabled={product.stock === 0} onClick={() => { onAdd(product); onClose(); }}>
             <ShoppingBag size={17} /> Add to basket
           </button>
         </div>
       </section>
-    </div>
-  );
-}
-
-function Cart({ cart, onClose, onChangeQuantity, onOrder, customer }) {
-  const total = cart.reduce(
-    (sum, { product, quantity }) => sum + product.price * quantity,
-    0,
-  );
-  const [customerName, setCustomerName] = useState(customer?.name || "");
-  const [phone, setPhone] = useState(customer?.phone || "");
-  const [address, setAddress] = useState("");
-  const [pincode, setPincode] = useState("");
-
-  useEffect(() => {
-    if (customer) {
-      setCustomerName(customer.name || "");
-      setPhone(customer.phone || "");
-    }
-  }, [customer]);
-
-  return (
-    <div className="overlay" onMouseDown={onClose}>
-      <aside className="cart-panel" onMouseDown={(event) => event.stopPropagation()}>
-        <div className="panel-heading">
-          <div>
-            <span className="eyebrow">YOUR BASKET</span>
-            <h2>Your cart</h2>
-          </div>
-          <button className="icon-button" onClick={onClose} aria-label="Close cart">
-            <X size={20} />
-          </button>
-        </div>
-        {cart.length === 0 ? (
-          <p className="empty-cart">Your cart is empty. Add a few items to get started.</p>
-        ) : (
-          <>
-            <div className="cart-items">
-              {cart.map(({ product, quantity }) => (
-                <div className="cart-item" key={product._id}>
-                  <div className="cart-item-info">
-                    <div className="cart-thumb">
-                      {product.imageUrl ? <img src={product.imageUrl} alt="" /> : <ShoppingBag size={18} />}
-                    </div>
-                    <div>
-                    <strong>{product.name}</strong>
-                    <span>{formatPrice(product.price)} each</span>
-                    </div>
-                  </div>
-                  <div className="quantity-control">
-                    <button onClick={() => onChangeQuantity(product._id, quantity - 1)} aria-label={`Remove one ${product.name}`}><Minus size={13} /></button>
-                    <span>{quantity}</span>
-                    <button onClick={() => onChangeQuantity(product._id, quantity + 1)} aria-label={`Add one ${product.name}`} disabled={quantity >= product.stock}><Plus size={13} /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="cart-summary">
-              <span>Estimated total</span>
-              <strong>{formatPrice(total)}</strong>
-            </div>
-            <div className="checkout-fields">
-              <label>Full name<input value={customerName} onChange={(event) => setCustomerName(event.target.value)} required /></label>
-              <label>Phone number<input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} required /></label>
-              <label>Delivery address<textarea value={address} onChange={(event) => setAddress(event.target.value)} placeholder="House / flat no., street, area, landmark" required /></label>
-              <label>Pincode<input type="text" inputMode="numeric" maxLength={6} pattern="[0-9]{6}" value={pincode} onChange={(event) => setPincode(event.target.value.replace(/\D/g, ""))} placeholder="6-digit pincode" required /></label>
-            </div>
-            <p className="cart-note">The shop will confirm stock, delivery charges, and final price.</p>
-            <button className="order-button" onClick={() => onOrder({ customerName, phone, address, pincode })} disabled={!customerName.trim() || !phone.trim() || !address.trim() || !/^[0-9]{6}$/.test(pincode)}>
-              Continue on WhatsApp <ArrowRight size={18} />
-            </button>
-            <p className="send-note">WhatsApp opens with a draft. Your order is sent only after you press Send.</p>
-          </>
-        )}
-      </aside>
     </div>
   );
 }
@@ -546,11 +502,11 @@ function AccountModal({ open, onClose, token, customer, onAuthenticated, onLogou
               )}
               <label>Email address<input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></label>
               {mode === "register" && (
-                <label>Phone number<input type="tel" value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="+91..." /></label>
+                <label>Phone number<input type="tel" maxLength={20} value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} placeholder="+91..." required /></label>
               )}
               <label>Password<input type="password" minLength={mode === "register" ? 8 : 1} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required /></label>
               {message && <p className="error-message" role="alert">{message}</p>}
-              <button className="order-button" disabled={loading}>{loading ? "Please wait..." : mode === "register" ? "Create account" : "Sign in"} <ArrowRight size={17} /></button>
+              <button className="order-button" data-magnetic disabled={loading}>{loading ? "Please wait..." : mode === "register" ? "Create account" : "Sign in"} <ArrowRight size={17} /></button>
             </form>
           </>
         ) : (
@@ -573,10 +529,10 @@ function AccountModal({ open, onClose, token, customer, onAuthenticated, onLogou
             {accountSection === "profile" ? (
               <form className="account-profile" onSubmit={saveProfile}>
                 <label>Full name<input value={profile?.name || ""} onChange={(event) => setProfile({ ...profile, name: event.target.value })} required /></label>
-                <label>Phone number<input type="tel" value={profile?.phone || ""} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} /></label>
+                <label>Phone number<input type="tel" maxLength={20} value={profile?.phone || ""} onChange={(event) => setProfile({ ...profile, phone: event.target.value })} required /></label>
                 <label>Email address<input value={profile?.email || ""} disabled /></label>
                 {message && <p className={message === "Profile updated." ? "status-message" : "error-message"} role="status">{message}</p>}
-                <button className="order-button" disabled={loading}>{loading ? "Saving..." : "Save profile"}</button>
+                <button className="order-button" data-magnetic disabled={loading}>{loading ? "Saving..." : "Save profile"}</button>
               </form>
             ) : (
               <div className="account-orders">
@@ -593,6 +549,7 @@ function AccountModal({ open, onClose, token, customer, onAuthenticated, onLogou
                       <span>{new Date(order.createdAt).toLocaleDateString()}</span>
                     </div>
                     <b>{formatPrice(order.total)}</b>
+                    <span className="order-payment">{order.paymentMethod === "cod" ? "Cash on delivery" : "WhatsApp"}</span>
                     <span className={`order-status status-${order.status}`}><CircleCheck size={13} /> {order.status}</span>
                   </div>
                 ))}
@@ -623,9 +580,14 @@ function Storefront() {
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [orderError, setOrderError] = useState("");
   const [toast, setToast] = useState("");
   const [accountOpen, setAccountOpen] = useState(false);
   const [customerToken, setCustomerToken] = useState(() => localStorage.getItem("customer-token") || "");
+  const [customerVerified, setCustomerVerified] = useState(false);
+  const [pendingCartProduct, setPendingCartProduct] = useState(null);
+  const [pendingFavoriteId, setPendingFavoriteId] = useState("");
+  const authenticatedInCurrentSession = useRef(false);
   const [customer, setCustomer] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("customer-profile") || "null");
@@ -636,29 +598,50 @@ function Storefront() {
 
   useEffect(() => {
     if (!customerToken) {
+      setCustomerVerified(false);
+      setCustomer(null);
       setFavorites([]);
       setShowFavorites(false);
       return;
     }
+    if (authenticatedInCurrentSession.current) {
+      return;
+    }
     let cancelled = false;
-    async function loadWishlist() {
+    async function verifyCustomer() {
       try {
         const response = await fetch(`${API_URL}/api/customer/profile`, {
           headers: { Authorization: `Bearer ${customerToken}` },
         });
-        if (response.ok) {
-          const profile = await response.json();
+        if (response.status === 401 || response.status === 404) {
+          localStorage.removeItem("customer-token");
+          localStorage.removeItem("customer-profile");
           if (!cancelled) {
+            setCustomerToken("");
+            setCustomer(null);
+          }
+          return;
+        }
+        if (!response.ok) {
+          throw new Error("Could not verify your account. Please try again.");
+        }
+        const profile = await response.json();
+        if (!cancelled) {
+          setCustomer(profile);
+          if (!authenticatedInCurrentSession.current) {
             setFavorites((profile.favorites || []).map((id) => id.toString()));
           }
+          localStorage.setItem("customer-profile", JSON.stringify(profile));
+          setCustomerVerified(true);
         }
-      } catch {
+      } catch (verificationError) {
         if (!cancelled) {
-          setFavorites([]);
+          setToast(`${verificationError.message || "Could not verify your account."} Sign in again before shopping.`);
         }
       }
     }
-    loadWishlist();
+    setCustomerVerified(false);
+    verifyCustomer();
     return () => {
       cancelled = true;
     };
@@ -725,6 +708,15 @@ function Storefront() {
     () => [...new Set(products.map((product) => product.category))].sort(),
     [products],
   );
+  const categoryCounts = useMemo(() => {
+    const counts = new Map();
+    products.forEach((product) => {
+      if (product.available) {
+        counts.set(product.category, (counts.get(product.category) || 0) + 1);
+      }
+    });
+    return counts;
+  }, [products]);
 
   const visibleProducts = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -749,7 +741,7 @@ function Storefront() {
     return filteredProducts;
   }, [products, activeCategory, search, sortOrder, showFavorites, favorites]);
 
-  function addToCart(product) {
+  function addProductToCart(product) {
     setCart((currentCart) => {
       const existingItem = currentCart.find((item) => item.product._id === product._id);
       if (existingItem) {
@@ -762,6 +754,16 @@ function Storefront() {
       return [...currentCart, { product, quantity: 1 }];
     });
     setToast(`${product.name} added to your basket`);
+  }
+
+  function addToCart(product) {
+    if (!customerVerified || !customerToken || !customer) {
+      setPendingCartProduct(product);
+      setAccountOpen(true);
+      setToast("Sign in to add this item to your basket");
+      return;
+    }
+    addProductToCart(product);
   }
 
   function changeQuantity(productId, quantity) {
@@ -779,11 +781,22 @@ function Storefront() {
     );
   }
 
-  async function orderOnWhatsApp(checkout) {
+  async function placeOrder(checkout) {
     if (cart.length === 0) {
-      return;
+      return false;
+    }
+    if (!customerVerified || !customerToken || !customer) {
+      setAccountOpen(true);
+      setToast("Sign in to place your order");
+      return false;
     }
     try {
+      setOrderError("");
+      const { paymentMethod } = checkout;
+      if (paymentMethod !== "whatsapp" && paymentMethod !== "cod") {
+        throw new Error("Choose WhatsApp confirmation or cash on delivery.");
+      }
+      const whatsappUrl = paymentMethod === "whatsapp" ? makeWhatsAppUrl(cart, checkout) : "";
       const response = await fetch(`${API_URL}/api/orders`, {
         method: "POST",
         headers: {
@@ -795,6 +808,7 @@ function Storefront() {
           phone: checkout.phone,
           address: checkout.address,
           pincode: checkout.pincode,
+          paymentMethod,
           items: cart.map(({ product, quantity }) => ({ productId: product._id, quantity })),
         }),
       });
@@ -802,17 +816,24 @@ function Storefront() {
       if (!response.ok) {
         throw new Error(result.message || "Could not place the order.");
       }
-      setToast("Order saved. Continue in WhatsApp to confirm.");
+      setToast(paymentMethod === "cod"
+        ? "COD order placed. The shop will contact you to confirm."
+        : "Order saved. Continue in WhatsApp to confirm.");
       setCart([]);
       setCartOpen(false);
-      window.open(makeWhatsAppUrl(cart, checkout), "_blank", "noopener,noreferrer");
+      if (paymentMethod === "whatsapp") {
+        window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+      }
+      return true;
     } catch (orderError) {
-      setError(orderError.message);
+      setOrderError(orderError.message);
+      return false;
     }
   }
 
   function toggleFavorite(productId) {
-    if (!customerToken) {
+    if (!customerVerified || !customerToken || !customer) {
+      setPendingFavoriteId(productId);
       setAccountOpen(true);
       setToast("Sign in to save items to your wishlist");
       return;
@@ -846,17 +867,52 @@ function Storefront() {
   }
 
   function authenticateCustomer(result) {
+    authenticatedInCurrentSession.current = true;
+    const authenticatedFavorites = (result.customer.favorites || []).map((id) => id.toString());
     setCustomerToken(result.token);
     setCustomer(result.customer);
-    setFavorites((result.customer.favorites || []).map((id) => id.toString()));
+    setCustomerVerified(true);
+    setFavorites(authenticatedFavorites);
     setShowFavorites(false);
     localStorage.setItem("customer-token", result.token);
     localStorage.setItem("customer-profile", JSON.stringify(result.customer));
+    if (pendingCartProduct) {
+      addProductToCart(pendingCartProduct);
+      setPendingCartProduct(null);
+      setAccountOpen(false);
+    }
+    if (pendingFavoriteId) {
+      const nextFavorites = [...new Set([...authenticatedFavorites, pendingFavoriteId])];
+      setFavorites(nextFavorites);
+      setPendingFavoriteId("");
+      setAccountOpen(false);
+      fetch(`${API_URL}/api/customer/wishlist`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${result.token}`,
+        },
+        body: JSON.stringify({ productIds: nextFavorites }),
+      }).then(async (response) => {
+        if (!response.ok) {
+          const errorResult = await response.json();
+          throw new Error(errorResult.message || "Could not update wishlist.");
+        }
+        const wishlist = await response.json();
+        setFavorites(wishlist.favorites);
+      }).catch((wishlistError) => {
+        setError(wishlistError.message);
+      });
+    }
   }
 
   function logoutCustomer() {
+    authenticatedInCurrentSession.current = false;
     setCustomerToken("");
     setCustomer(null);
+    setCustomerVerified(false);
+    setPendingCartProduct(null);
+    setPendingFavoriteId("");
     setFavorites([]);
     setShowFavorites(false);
     localStorage.removeItem("customer-token");
@@ -865,8 +921,45 @@ function Storefront() {
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  function handleMagneticPointerMove(event) {
+    if (event.pointerType === "touch") {
+      return;
+    }
+    const target = event.target.closest("[data-magnetic]");
+    if (!target) {
+      return;
+    }
+    const bounds = target.getBoundingClientRect();
+    if (!bounds.width || !bounds.height) {
+      return;
+    }
+    const offsetX = ((event.clientX - bounds.left) / bounds.width - 0.5) * 8;
+    const offsetY = ((event.clientY - bounds.top) / bounds.height - 0.5) * 8;
+    target.style.setProperty("--magnetic-x", `${offsetX.toFixed(2)}px`);
+    target.style.setProperty("--magnetic-y", `${offsetY.toFixed(2)}px`);
+  }
+
+  function handleMagneticPointerOut(event) {
+    const target = event.target.closest("[data-magnetic]");
+    const nextTarget = event.relatedTarget;
+    if (!target || (nextTarget instanceof Node && target.contains(nextTarget))) {
+      return;
+    }
+    target.style.setProperty("--magnetic-x", "0px");
+    target.style.setProperty("--magnetic-y", "0px");
+  }
+
   return (
-    <>
+    <div
+      className="storefront-shell"
+      style={{
+        "--primary": shopConfig.colors.primary,
+        "--secondary": shopConfig.colors.secondary,
+        "--accent": shopConfig.colors.accent,
+      }}
+      onPointerMove={handleMagneticPointerMove}
+      onPointerOut={handleMagneticPointerOut}
+    >
       <Header
         cartCount={cartCount}
         favoriteCount={favorites.length}
@@ -888,7 +981,7 @@ function Storefront() {
           document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
         }}
         onOpenCart={() => setCartOpen(true)}
-        customer={customer}
+        customer={customerVerified ? customer : null}
         onOpenAccount={() => setAccountOpen(true)}
         onShowFavorites={() => {
           setShowFavorites((current) => !current);
@@ -905,19 +998,19 @@ function Storefront() {
             <h1>{["Everyday essentials.<", "Big savings.", "Freshness,"][heroIndex]}<br /><em>{["Delivered locally.", "Everyday.", "close to home."][heroIndex]}</em></h1>
             <p>{shopConfig.tagline}. Discover premium daily essentials, picked fresh for your neighbourhood.</p>
             <div className="hero-actions">
-              <a className="hero-cta" href="#products">Shop now <ArrowRight size={17} /></a>
-              <a className="hero-secondary" href="#flash-sale">View offers</a>
+              <a className="hero-cta" data-magnetic href="#products">Shop now <ArrowRight size={17} /></a>
+              <a className="hero-secondary" data-magnetic href="#flash-sale">View offers</a>
             </div>
             <div className="hero-trust">
               <span><ShieldCheck size={15} /> Fresh & trusted</span>
               <span><Truck size={15} /> Local delivery</span>
             </div>
           </motion.div>
-          <motion.div className="hero-art" aria-hidden="true" animate={{ y: [0, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
+          <div className="hero-art" aria-hidden="true">
             <div className="hero-image-frame"><img src={shopConfig.heroBanner} alt="" className="hero-banner-image" /></div>
             <div className="floating-badge floating-badge-one"><Timer size={16} /> <span>Flash deal</span></div>
             <div className="floating-badge floating-badge-two"><Star size={15} fill="currentColor" /> <span>4.9 loved</span></div>
-          </motion.div>
+          </div>
           <div className="hero-countdown">
             <span>Offer ends in</span>
             <div><strong>{String(countdown.hours).padStart(2, "0")}</strong><b>:</b><strong>{String(countdown.minutes).padStart(2, "0")}</strong><b>:</b><strong>{String(countdown.seconds).padStart(2, "0")}</strong></div>
@@ -928,9 +1021,9 @@ function Storefront() {
         </section>
 
         <section className="service-strip" aria-label="Shop benefits">
-          <div><span className="service-icon"><Truck size={18} /></span><span><strong>Local delivery</strong><small>Ask your shop for options</small></span></div>
-          <div><span className="service-icon"><ShieldCheck size={18} /></span><span><strong>Shop with confidence</strong><small>Direct from your local store</small></span></div>
-          <div><span className="service-icon"><Clock3 size={18} /></span><span><strong>Quick order</strong><small>Send your basket on WhatsApp</small></span></div>
+          <div data-glow><span className="service-icon"><Truck size={18} /></span><span><strong>Local delivery</strong><small>Ask your shop for options</small></span></div>
+          <div data-glow><span className="service-icon"><ShieldCheck size={18} /></span><span><strong>Shop with confidence</strong><small>Direct from your local store</small></span></div>
+          <div data-glow><span className="service-icon"><Clock3 size={18} /></span><span><strong>Quick order</strong><small>Send your basket on WhatsApp</small></span></div>
         </section>
 
         <section className="category-showcase">
@@ -939,13 +1032,35 @@ function Storefront() {
             <button className="clear-filter" onClick={() => { setActiveCategory("All"); document.getElementById("products")?.scrollIntoView({ behavior: "smooth" }); }}>Browse everything <ArrowRight size={14} /></button>
           </div>
           <div className="top-category-grid">
-            {["Grocery", "Personal Care", "Snacks", "Home", "Fresh Products"].map((category, index) => (
-              <motion.button key={category} className="top-category-card" whileHover={{ y: -6 }} onClick={() => { setActiveCategory(category); setShowFavorites(false); document.getElementById("products")?.scrollIntoView({ behavior: "smooth" }); }}>
-                <span className={`category-visual category-visual-${index + 1}`}>{["G", "P", "S", "H", "F"][index]}</span>
-                <div><strong>{category}</strong><small>{index === 4 ? "Picked today" : "Daily essentials"}</small></div>
-                <ChevronRight size={16} />
-              </motion.button>
-            ))}
+            {productCategories.slice(0, 5).map((category, index) => {
+              const presentation = getCategoryPresentation(category, index);
+              const CategoryIcon = presentation.icon;
+              const itemCount = categoryCounts.get(category) || 0;
+              return (
+                <motion.button
+                  key={category}
+                  className={`top-category-card category-theme-${presentation.name}`}
+                  data-glow
+                  data-magnetic
+                  aria-label={`Browse ${category}, ${itemCount} ${itemCount === 1 ? "item" : "items"}`}
+                  whileHover={{ y: -5 }}
+                  onClick={() => { setActiveCategory(category); setShowFavorites(false); document.getElementById("products")?.scrollIntoView({ behavior: "smooth" }); }}
+                >
+                  <span className="category-card-head">
+                    <span className="category-card-icon"><CategoryIcon size={24} /></span>
+                    <small>{itemCount} {itemCount === 1 ? "item" : "items"}</small>
+                  </span>
+                  <span className="category-card-copy">
+                    <strong>{category}</strong>
+                    <span>Explore collection <ArrowRight size={14} /></span>
+                  </span>
+                  <span className="category-card-glow" aria-hidden="true" />
+                </motion.button>
+              );
+            })}
+            {!loading && productCategories.length === 0 && (
+              <p className="category-empty">Store categories will appear here as products are added.</p>
+            )}
           </div>
         </section>
 
@@ -957,9 +1072,9 @@ function Storefront() {
             </div>
             <div className="flash-grid">
               {visibleProducts.slice(0, 4).map((product) => (
-                <motion.article className="flash-card" key={product._id} whileHover={{ y: -5 }}>
+                <motion.article className="flash-card" data-glow key={product._id} whileHover={{ y: -5 }}>
                   <div className="flash-image">{product.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : <ShoppingBag size={32} />}<span>Hot deal</span></div>
-                  <div><span>{product.category}</span><h3>{product.name}</h3><strong>{formatPrice(product.price)}</strong><button onClick={() => addToCart(product)}>Add <Plus size={14} /></button></div>
+                  <div><span>{product.category}</span><h3>{product.name}</h3><strong>{formatPrice(product.price)}</strong><button data-magnetic onClick={() => addToCart(product)}>Add <Plus size={14} /></button></div>
                 </motion.article>
               ))}
             </div>
@@ -967,7 +1082,7 @@ function Storefront() {
         )}
 
         <section className="delivery-store-grid">
-          <div className="delivery-checker">
+          <div className="delivery-checker" data-glow>
             <span className="eyebrow">DELIVERY CHECK</span>
             <h2>Available in your area?</h2>
             <p>Enter your pincode to check local delivery availability.</p>
@@ -976,7 +1091,7 @@ function Storefront() {
               <button onClick={() => setToast(deliveryPincode.length === 6 ? "Great! Delivery availability will be confirmed on WhatsApp." : "Please enter a valid 6-digit pincode")}><Navigation size={16} /> Check</button>
             </div>
           </div>
-          <div className="store-timing">
+          <div className="store-timing" data-glow>
             <span className="store-open-dot" />
             <div><span className="eyebrow">STORE TIMINGS</span><h2>Open today</h2></div>
             <strong>8:00 AM — 10:00 PM</strong>
@@ -1003,15 +1118,20 @@ function Storefront() {
             </label>
           </div>
           <div className="category-list marketplace-categories" aria-label="Product categories">
-            {["All", ...productCategories].map((category) => (
-              <button
-                key={category}
-                className={category === activeCategory ? "category active" : "category"}
-                onClick={() => { setActiveCategory(category); setShowFavorites(false); }}
-              >
-                {category}
-              </button>
-            ))}
+            {["All", ...productCategories].map((category) => {
+              const itemCount = category === "All"
+                ? products.filter((product) => product.available).length
+                : categoryCounts.get(category) || 0;
+              return (
+                <button
+                  key={category}
+                  className={category === activeCategory ? "category active" : "category"}
+                  onClick={() => { setActiveCategory(category); setShowFavorites(false); }}
+                >
+                  <span>{category}</span><small>{itemCount}</small>
+                </button>
+              );
+            })}
           </div>
           <div className="results-meta">
             <span>{loading ? "Finding your products..." : `${visibleProducts.length} ${visibleProducts.length === 1 ? "product" : "products"} to explore`}</span>
@@ -1049,7 +1169,7 @@ function Storefront() {
               <motion.article className="recommended-card" key={product._id} whileHover={{ y: -5 }}>
                 <button className="recommended-image" onClick={() => setQuickViewProduct(product)}>{product.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : <ShoppingBag size={28} />}</button>
                 <div><span>{product.category}</span><h3>{product.name}</h3><strong>{formatPrice(product.price)}</strong></div>
-                <button className="recommended-add" onClick={() => addToCart(product)} aria-label={`Add ${product.name}`}><Plus size={16} /></button>
+                <button className="recommended-add" data-magnetic onClick={() => addToCart(product)} aria-label={`Add ${product.name}`}><Plus size={16} /></button>
               </motion.article>
             ))}
           </div>
@@ -1062,7 +1182,7 @@ function Storefront() {
               ["The easiest way to order from our local store.", "Arjun Mehta"],
               ["Great prices, clean packaging, and friendly service.", "Neha Patel"],
             ].map(([quote, name], index) => (
-              <motion.article className="review-card" key={name} whileHover={{ y: -5 }}>
+              <motion.article className="review-card" data-glow key={name} whileHover={{ y: -5 }}>
                 <div className="review-stars">{[1, 2, 3, 4, 5].map((star) => <Star key={star} size={14} fill="currentColor" />)}</div>
                 <p>“{quote}”</p>
                 <div><span>{name.slice(0, 1)}</span><strong>{name}<small>Verified customer</small></strong></div>
@@ -1070,7 +1190,7 @@ function Storefront() {
             ))}
           </div>
         </section>
-        <section className="visit-strip visit-location">
+        <section className="visit-strip visit-location" data-glow>
           <div className="visit-details">
             <span className="visit-icon"><MapPin size={20} /></span>
             <div><strong>Visit our shop</strong><span>{shopConfig.address}</span></div>
@@ -1107,6 +1227,7 @@ function Storefront() {
       </nav>
       <button
         className="whatsapp-float"
+        data-magnetic
         onClick={() => setCartOpen(true)}
         aria-label="Open basket to order on WhatsApp"
       >
@@ -1117,8 +1238,8 @@ function Storefront() {
       <AccountModal
         open={accountOpen}
         onClose={() => setAccountOpen(false)}
-        token={customerToken}
-        customer={customer}
+        token={customerVerified ? customerToken : ""}
+        customer={customerVerified ? customer : null}
         onAuthenticated={authenticateCustomer}
         onLogout={logoutCustomer}
       />
@@ -1126,13 +1247,15 @@ function Storefront() {
       {cartOpen && (
         <Cart
           cart={cart}
-          customer={customer}
+          customer={customerVerified ? customer : null}
+          formatPrice={formatPrice}
+          orderError={orderError}
           onClose={() => setCartOpen(false)}
           onChangeQuantity={changeQuantity}
-          onOrder={orderOnWhatsApp}
+          onOrder={placeOrder}
         />
       )}
-    </>
+    </div>
   );
 }
 
@@ -1350,7 +1473,7 @@ function AdminPage() {
         {activeView === "orders" && (
           <section className="admin-card">
             <div className="admin-section-heading"><div><span className="eyebrow">FULFILMENT</span><h2>All orders ({orders.length})</h2></div></div>
-            {orders.length === 0 ? <p>No orders yet.</p> : <div className="admin-orders-list">{orders.map((order) => <article className="admin-order" key={order._id}><div><strong>#{order._id.slice(-6).toUpperCase()}</strong><span>{order.customerName} · {order.phone}</span><small>{order.address}{order.pincode ? ` · ${order.pincode}` : ""}</small><small>{new Date(order.createdAt).toLocaleString()}</small></div><div className="order-items">{order.items.map((item) => <span key={`${order._id}-${item.product}`}>{item.name} × {item.quantity}</span>)}</div><b>{formatPrice(order.total)}</b><select value={order.status} onChange={(event) => updateOrderStatus(order._id, event.target.value)} aria-label={`Status for order ${order._id}`}><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="packed">Packed</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select></article>)}</div>}
+            {orders.length === 0 ? <p>No orders yet.</p> : <div className="admin-orders-list">{orders.map((order) => <article className="admin-order" key={order._id}><div><strong>#{order._id.slice(-6).toUpperCase()}</strong><span>{order.customerName} · {order.phone}</span><small>{order.address}{order.pincode ? ` · ${order.pincode}` : ""}</small><small>{new Date(order.createdAt).toLocaleString()}</small><small>Payment: {order.paymentMethod === "cod" ? "Cash on delivery" : "WhatsApp"}</small></div><div className="order-items">{order.items.map((item) => <span key={`${order._id}-${item.product}`}>{item.name} × {item.quantity}</span>)}</div><b>{formatPrice(order.total)}</b><select value={order.status} onChange={(event) => updateOrderStatus(order._id, event.target.value)} aria-label={`Status for order ${order._id}`}><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="packed">Packed</option><option value="delivered">Delivered</option><option value="cancelled">Cancelled</option></select></article>)}</div>}
           </section>
         )}
       </section>

@@ -10,7 +10,8 @@ export const shopConfig = {
   currency: "INR",
   locale: "en-IN",
   colors: {
-    primary: "#7c3aed",
-    accent: "#fb7185",
+    primary: "#22C55E",
+    secondary: "#0EA5E9",
+    accent: "#F97316",
   },
 };

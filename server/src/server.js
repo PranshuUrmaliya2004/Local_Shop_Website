@@ -6,9 +6,6 @@ import adminRoutes from "./routes/adminRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
-import Product from "./models/Product.js";
-import Order from "./models/Order.js";
-import Customer from "./models/Customer.js";
 
 const requiredEnvironment = ["MONGODB_URI", "JWT_SECRET"];
 const missingEnvironment = requiredEnvironment.filter((key) => !process.env[key]);
